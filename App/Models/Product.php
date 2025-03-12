@@ -32,6 +32,14 @@ class Product
         }
         throw new \Exception("Property {$val} does not exist");
     }
+    function __set($name, $value)
+    {
+        if (property_exists($this, $name)) {
+            $this->$name = $value;
+        } else {
+            throw new \Exception("Property {$name} does not exist");
+        }
+    }
     public static function filterProductsByCategory($categoryIds, $products)
     {
         if (empty($categoryIds)) {

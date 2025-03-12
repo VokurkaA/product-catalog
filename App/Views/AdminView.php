@@ -28,7 +28,7 @@
             <!-- Products Section -->
             <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
                 <h2 class="text-xl font-bold text-white mb-6">Products Management</h2>
-                <form action="<?php $selectedProductId ? 'editProduct' : 'addProduct' ?>" method="POST">
+                <form method="POST">
                     <div class="mb-4">
                         <label for="productSelect" class="block mb-2 text-gray-300">Select Product</label>
                         <select id="productSelect" name="selectedProductId" class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white" onchange="this.form.submit()">
@@ -48,7 +48,7 @@
                     <div class="mb-4">
                         <label class="block mb-2 text-gray-300">ID:</label>
                         <input type="text" value="<?= $selectedProductId ? $selectedProduct->id : '' ?>"
-                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300">
+                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300" readonly>
                     </div>
 
                     <div class="mb-4">
@@ -94,18 +94,18 @@
 
                     <div class="mb-4">
                         <label class="block mb-2 text-gray-300">Rating:</label>
-                        <input type="text" value="<?= $selectedProductId ? number_format(array_sum($selectedProduct->rating) / count($selectedProduct->rating), 1) : '' ?>"
-                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300">
+                        <input type="text" value="<?= $selectedProductId && !empty($selectedProduct->rating) ? number_format(array_sum($selectedProduct->rating) / count($selectedProduct->rating), 1) : '' ?>"
+                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300" readonly>
                     </div>
 
                     <?php if ($selectedProductId): ?>
                         <div class="flex justify-end mt-6 space-x-4">
-                            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"> Remove Product</button>
-                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
+                            <button type="submit" name="action" value="removeProduct" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Remove Product</button>
+                            <button type="submit" name="action" value="updateProduct" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
                         </div>
                     <?php else: ?>
                         <div class="flex justify-end mt-6">
-                            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">
+                            <button type="submit" name="action" value="addProduct" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">
                                 Add New Product
                             </button>
                         </div>
@@ -116,8 +116,7 @@
             <!-- Categories Section -->
             <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6">
                 <h2 class="text-xl font-bold text-white mb-6">Categories Management</h2>
-                <form action="<?php $selectedCategoryId ? 'editCategory' : 'addCategory' ?>" method="POST">
-
+                <form method="POST">
                     <div class="mb-4">
                         <label for="categorySelect" class="block mb-2 text-gray-300">Select Category</label>
                         <select id="categorySelect" name="selectedCategoryId" class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white" onchange="this.form.submit()">
@@ -129,11 +128,15 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+                </form>
+
+                <form method="POST">
+                    <input type="hidden" name="selectedCategoryId" value="<?= $selectedCategoryId ?? '' ?>">
 
                     <div class="mb-4">
                         <label class="block mb-2 text-gray-300">ID:</label>
                         <input type="text" value="<?= $selectedCategoryId ?? '' ?>"
-                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300">
+                            class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-gray-300" readonly>
                     </div>
 
                     <div class="mb-4">
@@ -147,21 +150,23 @@
                         <select name="parent_id" class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white">
                             <option value="">No parent</option>
                             <?php foreach ($categories as $category): ?>
-                                <option value="<?= $category->id ?>" <?= $selectedCategoryId && $categories[$selectedCategoryId]->parentId == $category->id ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($category->name) ?>
-                                </option>
+                                <?php if ($selectedCategoryId != $category->id): ?>
+                                    <option value="<?= $category->id ?>" <?= $selectedCategoryId && isset($categories[$selectedCategoryId]->parentId) && $categories[$selectedCategoryId]->parentId == $category->id ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($category->name) ?>
+                                    </option>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <?php if ($selectedCategoryId): ?>
                         <div class="flex justify-end mt-6 space-x-4">
-                            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Remove Category</button>
-                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
+                            <button type="submit" name="action" value="removeCategory" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Remove Category</button>
+                            <button type="submit" name="action" value="updateCategory" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
                         </div>
                     <?php else: ?>
                         <div class="flex justify-end mt-6">
-                            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">Add New Category</button>
+                            <button type="submit" name="action" value="addCategory" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">Add New Category</button>
                         </div>
                     <?php endif; ?>
                 </form>
@@ -170,24 +175,29 @@
             <!-- Users Section -->
             <div class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 p-6 lg:col-span-2">
                 <h2 class="text-xl font-bold text-white mb-6">Users Management</h2>
-                <form action="<?php $selectedUserId ? 'editUser' : 'addUser' ?>" method="POST">
+                <form method="POST">
+                    <div class="mb-4">
+                        <label for="userSelect" class="block mb-2 text-gray-300">Select User</label>
+                        <select id="userSelect" name="selectedUserId" class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white" onchange="this.form.submit()">
+                            <option value="">Select a user...</option>
+                            <?php foreach ($users as $user): ?>
+                                <option value="<?= $user->id ?>" <?= isset($_POST['selectedUserId']) && $_POST['selectedUserId'] == $user->id ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($user->username) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
+
+                <form method="POST">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
-                            <div class="mb-4">
-                                <label for="userSelect" class="block mb-2 text-gray-300">Select User</label>
-                                <select id="userSelect" name="selectedUserId" class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white" onchange="this.form.submit()">
-                                    <option value="">Select a user...</option>
-                                    <?php foreach ($users as $user): ?>
-                                        <option value="<?= $user->id ?>" <?= isset($_POST['selectedUserId']) && $_POST['selectedUserId'] == $user->id ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($user->username) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
                             <div class="border-b border-gray-700 pb-4 mb-4">
+                                <input type="hidden" name="selectedUserId" value="<?= $selectedUserId ?? '' ?>">
+
                                 <div class="mb-4">
                                     <label class="block mb-2 text-gray-300">ID:</label>
-                                    <input type="text" name="id" value="<?= $selectedUserId ? htmlspecialchars($users[$selectedUserId]->id) : '' ?>"
+                                    <input type="text" value="<?= $selectedUserId ?? '' ?>"
                                         class="w-full border border-gray-600 p-2 rounded bg-gray-700 text-white" readonly>
                                 </div>
 
@@ -237,11 +247,11 @@
                                 <div>
                                     <label class="block mb-2 text-gray-300">Cart Items:</label>
                                     <div class="bg-gray-700 p-4 rounded-lg text-white max-h-40 overflow-y-auto">
-                                        <?php if ($selectedUserId && count($users[$selectedUserId]->cart) != 0): ?>
+                                        <?php if ($selectedUserId && isset($users[$selectedUserId]->cart) && count($users[$selectedUserId]->cart) != 0): ?>
                                             <?php foreach ($users[$selectedUserId]->cart as $productId): ?>
                                                 <div class="py-2 px-3 hover:bg-gray-600 rounded">
                                                     <input type="text" value="<?= $productId ?>" class="bg-gray-600 text-white p-1 rounded w-12 mr-2 inline-block">
-                                                    <?= htmlspecialchars($products[$productId]->name) ?>
+                                                    <?= isset($products[$productId]) ? htmlspecialchars($products[$productId]->name) : 'Unknown Product' ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -256,7 +266,7 @@
                                                     <option value="<?= $product->id ?>"><?= htmlspecialchars($product->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="submit" name="add_to_cart" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
+                                            <button type="submit" name="action" value="add_to_cart" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
                                                 Add
                                             </button>
                                         </div>
@@ -266,11 +276,11 @@
                                 <div>
                                     <label class="block mb-2 text-gray-300">Liked Items:</label>
                                     <div class="bg-gray-700 p-4 rounded-lg text-white max-h-40 overflow-y-auto">
-                                        <?php if ($selectedUserId && count($users[$selectedUserId]->liked) != 0): ?>
+                                        <?php if ($selectedUserId && isset($users[$selectedUserId]->liked) && count($users[$selectedUserId]->liked) != 0): ?>
                                             <?php foreach ($users[$selectedUserId]->liked as $productId): ?>
                                                 <div class="py-2 px-3 hover:bg-gray-600 rounded">
                                                     <input type="text" value="<?= $productId ?>" class="bg-gray-600 text-white p-1 rounded w-12 mr-2 inline-block">
-                                                    <?= htmlspecialchars($products[$productId]->name) ?>
+                                                    <?= isset($products[$productId]) ? htmlspecialchars($products[$productId]->name) : 'Unknown Product' ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -285,7 +295,7 @@
                                                     <option value="<?= $product->id ?>"><?= htmlspecialchars($product->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="submit" name="add_to_liked" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
+                                            <button type="submit" name="action" value="add_to_liked" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
                                                 Add
                                             </button>
                                         </div>
@@ -295,11 +305,11 @@
                                 <div>
                                     <label class="block mb-2 text-gray-300">Previous Purchases:</label>
                                     <div class="bg-gray-700 p-4 rounded-lg text-white max-h-40 overflow-y-auto">
-                                        <?php if ($selectedUserId && count($users[$selectedUserId]->previousPurchases) != 0): ?>
+                                        <?php if ($selectedUserId && isset($users[$selectedUserId]->previousPurchases) && count($users[$selectedUserId]->previousPurchases) != 0): ?>
                                             <?php foreach ($users[$selectedUserId]->previousPurchases as $productId): ?>
                                                 <div class="py-2 px-3 hover:bg-gray-600 rounded">
                                                     <input type="text" value="<?= $productId ?>" class="bg-gray-600 text-white p-1 rounded w-12 mr-2 inline-block">
-                                                    <?= htmlspecialchars($products[$productId]->name) ?>
+                                                    <?= isset($products[$productId]) ? htmlspecialchars($products[$productId]->name) : 'Unknown Product' ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -314,7 +324,7 @@
                                                     <option value="<?= $product->id ?>"><?= htmlspecialchars($product->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="submit" name="add_to_purchases" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
+                                            <button type="submit" name="action" value="add_to_purchases" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 ml-2">
                                                 Add
                                             </button>
                                         </div>
@@ -326,12 +336,12 @@
 
                     <?php if ($selectedUserId): ?>
                         <div class="flex justify-end mt-6 space-x-4">
-                            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Remove User</button>
-                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
+                            <button type="submit" name="action" value="removeUser" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Remove User</button>
+                            <button type="submit" name="action" value="updateUser" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200">Save Changes</button>
                         </div>
                     <?php else: ?>
                         <div class="flex justify-end mt-6">
-                            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">Add New User</button>
+                            <button type="submit" name="action" value="addUser" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200">Add New User</button>
                         </div>
                     <?php endif; ?>
                 </form>
