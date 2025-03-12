@@ -1,4 +1,4 @@
 .env
 vendor/
-Config/database.sql
+config/
 .idea/
