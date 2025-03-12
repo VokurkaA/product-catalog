@@ -27,7 +27,7 @@ class AdminController implements BaseController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action = $_POST['action'] ?? '';
-            if (method_exists($this, $action) && is_callable([$this, $action])) {
+            if (!empty($action) && method_exists($this, $action) && is_callable([$this, $action])) {
                 return $this->$action();
             }
         }
@@ -57,7 +57,7 @@ class AdminController implements BaseController
         $selectedCategoryId = $_POST['selectedCategoryId'] ?? null;
         $selectedUserId = $_POST['selectedUserId'] ?? null;
 
-        $selectedProduct = $selectedProductId ? $products[$selectedProductId] : null;
+        $selectedProduct = $selectedProductId && isset($products[$selectedProductId]) ? $products[$selectedProductId] : null;
 
         return require './App/Views/AdminView.php';
     }
@@ -85,6 +85,7 @@ class AdminController implements BaseController
 
         try {
             Cache::set('products', $products);
+            $this->errors[] = "Product added successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -99,10 +100,18 @@ class AdminController implements BaseController
             $products = Cache::get('products');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $products = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['product_id'];
+
+        if (!isset($products[$id])) {
+            $this->errors[] = "Product not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         $products[$id]->name = $_POST['name'];
         $products[$id]->description = $_POST['description'];
         $products[$id]->brand = $_POST['brand'];
@@ -112,6 +121,7 @@ class AdminController implements BaseController
 
         try {
             Cache::set('products', $products);
+            $this->errors[] = "Product updated successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -126,14 +136,23 @@ class AdminController implements BaseController
             $products = Cache::get('products');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $products = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['product_id'];
+
+        if (!isset($products[$id])) {
+            $this->errors[] = "Product not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         unset($products[$id]);
 
         try {
             Cache::set('products', $products);
+            $this->errors[] = "Product removed successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -160,6 +179,7 @@ class AdminController implements BaseController
 
         try {
             Cache::set('categories', $categories);
+            $this->errors[] = "Category added successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -174,15 +194,24 @@ class AdminController implements BaseController
             $categories = Cache::get('categories');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $categories = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['selectedCategoryId'];
+
+        if (!isset($categories[$id])) {
+            $this->errors[] = "Category not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         $categories[$id]->name = $_POST['name'];
         $categories[$id]->parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
 
         try {
             Cache::set('categories', $categories);
+            $this->errors[] = "Category updated successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -197,14 +226,23 @@ class AdminController implements BaseController
             $categories = Cache::get('categories');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $categories = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['selectedCategoryId'];
+
+        if (!isset($categories[$id])) {
+            $this->errors[] = "Category not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         unset($categories[$id]);
 
         try {
             Cache::set('categories', $categories);
+            $this->errors[] = "Category removed successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -219,10 +257,18 @@ class AdminController implements BaseController
             $users = Cache::get('users');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $users = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['selectedUserId'];
+
+        if (!isset($users[$id])) {
+            $this->errors[] = "User not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         $users[$id]->username = $_POST['username'];
         $users[$id]->email = $_POST['email'];
         if (!empty($_POST['newPassword'])) {
@@ -234,6 +280,7 @@ class AdminController implements BaseController
 
         try {
             Cache::set('users', $users);
+            $this->errors[] = "User updated successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -248,14 +295,23 @@ class AdminController implements BaseController
             $users = Cache::get('users');
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
-            $users = [];
+            header('Location: /product-catalog/admin');
+            exit();
         }
 
         $id = (int)$_POST['selectedUserId'];
+
+        if (!isset($users[$id])) {
+            $this->errors[] = "User not found.";
+            header('Location: /product-catalog/admin');
+            exit();
+        }
+
         unset($users[$id]);
 
         try {
             Cache::set('users', $users);
+            $this->errors[] = "User removed successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
@@ -286,6 +342,7 @@ class AdminController implements BaseController
 
         try {
             Cache::set('users', $users);
+            $this->errors[] = "User added successfully.";
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
         }
