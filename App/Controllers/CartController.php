@@ -14,12 +14,33 @@ class CartController implements BaseController
             header('Location: /product-catalog/login');
             exit();
         }
-
         if (isset($_POST['remove']) && isset($_POST['product_id'])) {
             $productId = (int)$_POST['product_id'];
-            $user->cart = array_values(array_filter($user->cart, function ($id) use ($productId) {
-                return $id !== $productId;
-            }));
+            $newCart = array_filter($user->cart, fn($id) => $id !== $productId);
+            $user->cart = array_values($newCart);
+            Cache::set('user', $user);
+            header('Location: /product-catalog/cart');
+            exit();
+        }
+
+        if (isset($_POST['increment']) && isset($_POST['product_id'])) {
+            $productId = (int)$_POST['product_id'];
+            $newCart = $user->cart;
+            $newCart[] = $productId;
+            $user->cart = $newCart;
+            Cache::set('user', $user);
+            header('Location: /product-catalog/cart');
+            exit();
+        }
+
+        if (isset($_POST['decrement']) && isset($_POST['product_id'])) {
+            $productId = (int)$_POST['product_id'];
+            $index = array_search($productId, $user->cart, true);
+            if ($index !== false) {
+                $newCart = $user->cart;
+                unset($newCart[$index]);
+                $user->cart = array_values($newCart);
+            }
             Cache::set('user', $user);
             header('Location: /product-catalog/cart');
             exit();
@@ -27,7 +48,6 @@ class CartController implements BaseController
 
         $products = Cache::get('products');
         $cartProductsIds = $user->cart;
-        // Group products by ID and calculate quantities
         $groupedProducts = [];
         foreach ($cartProductsIds as $id) {
             if (!isset($groupedProducts[$id])) {

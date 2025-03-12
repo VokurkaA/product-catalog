@@ -8,8 +8,8 @@
     <title>Profile</title>
 </head>
 
-<body class="bg-gray-900 min-h-screen flex flex-col pt-24">
-<?php (new \App\Controllers\HeaderController())->handle(); ?>
+<body class="bg-gray-900 min-h-screen flex flex-col pt-24 select-none">
+    <?php (new \App\Controllers\HeaderController())->handle(); ?>
 
     <div class="container mx-auto px-4">
         <div class="max-w-2xl mx-auto bg-gray-800 rounded-lg shadow-lg p-8 border border-gray-700">
@@ -35,7 +35,7 @@
 
                     <div class="mb-6">
                         <label class="block text-gray-400 mb-2">Email Address</label>
-                        <input type="email" 
+                        <input type="email"
                             name="email"
                             value="<?= htmlspecialchars($user->email) ?>"
                             class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 
@@ -68,7 +68,7 @@
                             transition-all duration-200 hover:bg-gray-600">
                     </div>
 
-                    <div class="mb-6">
+                    <div class="mb-6 select">
                         <label class="block text-gray-400 mb-2">Role</label>
                         <p class="text-white text-lg capitalize bg-gray-700 p-3 rounded-lg border border-gray-600">
                             <?= htmlspecialchars($user->role) ?>

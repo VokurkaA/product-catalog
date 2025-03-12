@@ -12,8 +12,9 @@ class Product
     private string $price;
     private int $categoryId;
     private array $rating;
+    private int $stock;
 
-    public function __construct($id, $name, $description, $brand, $price, $categoryId, $rating)
+    public function __construct($id, $name, $description, $brand, $price, $categoryId, $rating, $stock)
     {
         $this->id = $id;
         $this->name = $name;
@@ -22,6 +23,7 @@ class Product
         $this->price = $price;
         $this->categoryId = $categoryId;
         $this->rating = $rating;
+        $this->stock = $stock;
     }
     function __get($val)
     {

@@ -19,7 +19,7 @@ class ProfileController implements BaseController
 
         // Handle logout request
         if (isset($_POST['logout'])) {
-            Cache::set('user', null);
+            Cache::clear('user');
             header('Location: /product-catalog/login');
             exit();
         }
@@ -32,8 +32,6 @@ class ProfileController implements BaseController
 
             if (empty($username)) {
                 $this->errors[] = "Username is required";
-            } elseif (strlen($username) < 1) {
-                $this->errors[] = "Please enter a valid username";
             }
 
             if (empty($email)) {
@@ -48,7 +46,11 @@ class ProfileController implements BaseController
 
             if (empty($this->errors)) {
                 try {
-                    Cache::set('user',$user);
+                    $user->username = $username;
+                    $user->email = $email;
+                    $user->phoneNumber = $phoneNumber;
+                    $user->address = $address;
+                    Cache::set('user', $user);
                 } catch (\Exception $e) {
                     $this->errors[] = "Failed to update profile. Please try again.";
                 }

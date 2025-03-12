@@ -52,7 +52,7 @@ class Cache
             self::initUser($key['username'], $key['password']);
             return self::get('user');
         }
-        if (!in_array($key, ['products', 'categories', 'user'])) {
+        if (!in_array($key, ['products', 'categories', 'user', 'users'])) {
             throw new \InvalidArgumentException("Invalid cache key: {$key}");
         }
 
@@ -78,6 +78,28 @@ class Cache
                 $value = self::initCategories();
                 break;
 
+            case 'users':
+                $data = Database::query('SELECT * FROM users');
+                $value = [];
+                foreach ($data as $userData) {
+                    $cart = array_map('intval', array_filter(explode(',', trim($userData['cart'], '{}'))));
+                    $liked = array_map('intval', array_filter(explode(',', trim($userData['liked'], '{}'))));
+                    $previousPurchases = array_map('intval', array_filter(explode(',', trim($userData['previous_purchases'], '{}'))));
+                    $value[$userData['id']] = new User(
+                        $userData['id'],
+                        $userData['username'],
+                        $userData['password_hash'],
+                        $userData['email'],
+                        $userData['role'] ?? 'user',
+                        $userData['phone_number'],
+                        $userData['address'],
+                        $cart,
+                        $liked,
+                        $previousPurchases
+                    );
+                }
+                break;
+
             default:
                 $value = null;
         }
@@ -91,7 +113,7 @@ class Cache
 
     public static function set($key, $value)
     {
-        if (!in_array($key, ['user', 'products', 'categories'])) {
+        if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
             throw new \InvalidArgumentException("Invalid cache key: {$key}");
         }
 
@@ -110,7 +132,7 @@ class Cache
     public static function clear($key = null)
     {
         if ($key !== null) {
-            if (!in_array($key, ['user', 'products', 'categories'])) {
+            if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
                 throw new \InvalidArgumentException("Invalid cache key: {$key}");
             }
             self::$memoryCache[$key] = null;
@@ -135,7 +157,7 @@ class Cache
         $products = Database::query('SELECT * FROM products');
         $result = [];
         foreach ($products as $p) {
-            $result[$p['id']] = new Product($p['id'], $p['name'], $p['description'], $p['brand'], $p['price'], $p['category_id'], array_map('intval', explode(',', $p['rating'])));
+            $result[$p['id']] = new Product($p['id'], $p['name'], $p['description'], $p['brand'], $p['price'], $p['category_id'], array_map('intval', explode(',', $p['rating'])), $p['stock']);
         }
         return $result;
     }
@@ -163,12 +185,12 @@ class Cache
         $userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
         if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
             // Parse PostgreSQL array format by removing {} and splitting on commas
-            $cart = array_filter(explode(',', trim($userdata[0]['cart'], '{}')));
-            $liked = array_filter(explode(',', trim($userdata[0]['liked'], '{}')));
-            $previousPurchases = array_filter(explode(',', trim($userdata[0]['previous_purchases'], '{}')));
+            $cart = array_map('intval', array_filter(explode(',', trim($userdata[0]['cart'], '{}'))));
+            $liked = array_map('intval', array_filter(explode(',', trim($userdata[0]['liked'], '{}'))));
+            $previousPurchases = array_map('intval', array_filter(explode(',', trim($userdata[0]['previous_purchases'], '{}'))));
             $user = new User(
                 $userdata[0]['id'],
-                $userdata[0]['username'], 
+                $userdata[0]['username'],
                 $userdata[0]['password_hash'],
                 $userdata[0]['email'],
                 $userdata[0]['role'] ?? 'user',
@@ -176,7 +198,7 @@ class Cache
                 $userdata[0]['address'],
                 $cart,
                 $liked,
-                $previousPurchases
+                $previousPurchases,
             );
             self::set('user', $user);
         }
