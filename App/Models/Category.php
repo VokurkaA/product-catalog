@@ -17,21 +17,6 @@ class Category
         $this->childrenIds = $childrenIds;
     }
 
-    function __get($val)
-    {
-        if (property_exists($this, $val)) {
-            return $this->$val;
-        }
-        throw new \Exception("Property {$val} does not exist");
-    }
-    function __set($name, $value)
-    {
-        if (property_exists($this, $name)) {
-            $this->$name = $value;
-        } else {
-            throw new \Exception("Property {$name} does not exist");
-        }
-    }
     public static function getSubcategoriesRecursively($categoryId, $categories): array
     {
         if (!$categoryId) {
@@ -43,6 +28,7 @@ class Category
         }
         return $subcategories;
     }
+
     public static function getParentIdsRecursively($categoryId, $categories): array
     {
         if (!$categoryId) {
@@ -50,5 +36,22 @@ class Category
         }
         $ids = [$categoryId];
         return array_merge($ids, self::getParentIdsRecursively($categories[$categoryId]->parentId, $categories));
+    }
+
+    function __get($val)
+    {
+        if (property_exists($this, $val)) {
+            return $this->$val;
+        }
+        throw new \Exception("Property {$val} does not exist");
+    }
+
+    function __set($name, $value)
+    {
+        if (property_exists($this, $name)) {
+            $this->$name = $value;
+        } else {
+            throw new \Exception("Property {$name} does not exist");
+        }
     }
 }

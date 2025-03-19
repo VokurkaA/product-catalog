@@ -1,13 +1,13 @@
 <?php
 
 use App\Controllers\AdminController;
-use App\Controllers\HomeController;
-use App\Controllers\ProductController;
-use App\Controllers\ProfileController;
-use App\Controllers\LoginController;
-use App\Controllers\RegisterController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
+use App\Controllers\HomeController;
+use App\Controllers\LoginController;
+use App\Controllers\ProductController;
+use App\Controllers\ProfileController;
+use App\Controllers\RegisterController;
 
 $routes = [
     '' => HomeController::class,

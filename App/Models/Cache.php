@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Database;
-
 class Cache
 {
     private static $isInit = false;
@@ -12,39 +10,6 @@ class Cache
         'products' => null,
         'categories' => null
     ];
-
-    private static function init()
-    {
-        if (self::$isInit) {
-            return;
-        }
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (!isset($_SESSION['cache'])) {
-            $_SESSION['cache'] = [
-                'user' => null,
-                'products' => null,
-                'categories' => null
-            ];
-        }
-
-        if (!self::$memoryCache['products']) {
-            $products = self::initProducts();
-            self::$memoryCache['products'] = $products;
-            $_SESSION['cache']['products'] = $products;
-        }
-
-        if (!self::$memoryCache['categories']) {
-            $categories = self::initCategories();
-            self::$memoryCache['categories'] = $categories;
-            $_SESSION['cache']['categories'] = $categories;
-        }
-
-        self::$isInit = true;
-    }
 
     public static function get($key)
     {
@@ -111,6 +76,29 @@ class Cache
         return $value;
     }
 
+    public static function initUser($username, $password)
+    {
+        $userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
+        if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
+            $cart = array_map('intval', array_filter(explode(',', trim($userdata[0]['cart'], '{}'))));
+            $liked = array_map('intval', array_filter(explode(',', trim($userdata[0]['liked'], '{}'))));
+            $previousPurchases = array_map('intval', array_filter(explode(',', trim($userdata[0]['previous_purchases'], '{}'))));
+            $user = new User(
+                $userdata[0]['id'],
+                $userdata[0]['username'],
+                $userdata[0]['password_hash'],
+                $userdata[0]['email'],
+                $userdata[0]['role'] ?? 'user',
+                $userdata[0]['phone_number'],
+                $userdata[0]['address'],
+                $cart,
+                $liked,
+                $previousPurchases,
+            );
+            self::set('user', $user);
+        }
+    }
+
     public static function set($key, $value)
     {
         if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
@@ -145,27 +133,37 @@ class Cache
         }
     }
 
-    public static function clear($key = null)
+    private static function init()
     {
-        if ($key !== null) {
-            if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
-                throw new \InvalidArgumentException("Invalid cache key: {$key}");
-            }
-            self::$memoryCache[$key] = null;
-            if (isset($_SESSION['cache'])) {
-                $_SESSION['cache'][$key] = null;
-            }
-        } else {
-            self::$memoryCache = [
+        if (self::$isInit) {
+            return;
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['cache'])) {
+            $_SESSION['cache'] = [
                 'user' => null,
                 'products' => null,
                 'categories' => null
             ];
-            if (isset($_SESSION['cache'])) {
-                $_SESSION['cache'] = self::$memoryCache;
-            }
-            self::$isInit = false;
         }
+
+        if (!self::$memoryCache['products']) {
+            $products = self::initProducts();
+            self::$memoryCache['products'] = $products;
+            $_SESSION['cache']['products'] = $products;
+        }
+
+        if (!self::$memoryCache['categories']) {
+            $categories = self::initCategories();
+            self::$memoryCache['categories'] = $categories;
+            $_SESSION['cache']['categories'] = $categories;
+        }
+
+        self::$isInit = true;
     }
 
     private static function initProducts()
@@ -194,29 +192,6 @@ class Cache
             }
         }
         return $result;
-    }
-
-    public static function initUser($username, $password)
-    {
-        $userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
-        if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
-            $cart = array_map('intval', array_filter(explode(',', trim($userdata[0]['cart'], '{}'))));
-            $liked = array_map('intval', array_filter(explode(',', trim($userdata[0]['liked'], '{}'))));
-            $previousPurchases = array_map('intval', array_filter(explode(',', trim($userdata[0]['previous_purchases'], '{}'))));
-            $user = new User(
-                $userdata[0]['id'],
-                $userdata[0]['username'],
-                $userdata[0]['password_hash'],
-                $userdata[0]['email'],
-                $userdata[0]['role'] ?? 'user',
-                $userdata[0]['phone_number'],
-                $userdata[0]['address'],
-                $cart,
-                $liked,
-                $previousPurchases,
-            );
-            self::set('user', $user);
-        }
     }
 
     private static function syncUserToDatabase($user)
@@ -306,6 +281,7 @@ class Cache
 
         Database::query($query, $params);
     }
+
     private static function syncCategoryToDatabase($category)
     {
         if (!$category) {
@@ -325,5 +301,28 @@ class Cache
             "INSERT INTO categories (id, name, parent_id) VALUES (:id, :name, :parent_id)";
 
         Database::query($query, $params);
+    }
+
+    public static function clear($key = null)
+    {
+        if ($key !== null) {
+            if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
+                throw new \InvalidArgumentException("Invalid cache key: {$key}");
+            }
+            self::$memoryCache[$key] = null;
+            if (isset($_SESSION['cache'])) {
+                $_SESSION['cache'][$key] = null;
+            }
+        } else {
+            self::$memoryCache = [
+                'user' => null,
+                'products' => null,
+                'categories' => null
+            ];
+            if (isset($_SESSION['cache'])) {
+                $_SESSION['cache'] = self::$memoryCache;
+            }
+            self::$isInit = false;
+        }
     }
 }

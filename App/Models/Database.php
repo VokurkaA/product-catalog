@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use PDO;
@@ -13,17 +14,15 @@ class Database
     private static $password;
     private static $initialized = false;
 
-    private static function initialize()
+    public static function query($sql, $params = [])
     {
-        if (!self::$initialized) {
-            $env = parse_ini_file('.env');
-            self::$host = $env['POSTGRES_HOST'];
-            self::$port = $env['POSTGRES_PORT'];
-            self::$dbname = $env['POSTGRES_NAME'];
-            self::$user = $env['POSTGRES_USER'];
-            self::$password = $env['POSTGRES_PASSWORD'];
-            self::$initialized = true;
+        $pdo = self::connect();
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
         }
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     private static function connect()
@@ -42,15 +41,17 @@ class Database
         }
     }
 
-    public static function query($sql, $params = [])
+    private static function initialize()
     {
-        $pdo = self::connect();
-        $stmt = $pdo->prepare($sql);
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
+        if (!self::$initialized) {
+            $env = parse_ini_file('.env');
+            self::$host = $env['POSTGRES_HOST'];
+            self::$port = $env['POSTGRES_PORT'];
+            self::$dbname = $env['POSTGRES_NAME'];
+            self::$user = $env['POSTGRES_USER'];
+            self::$password = $env['POSTGRES_PASSWORD'];
+            self::$initialized = true;
         }
-        $stmt->execute();
-        return $stmt->fetchAll();
     }
 
     public static function prepare($sql)

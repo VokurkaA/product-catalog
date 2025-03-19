@@ -44,7 +44,7 @@ class RegisterController implements BaseController
                 if ($hashedPassword === false) {
                     throw new \Exception("Password hashing failed");
                 }
-                
+
                 Cache::set('user', new User(null, $username, $hashedPassword, $email));
                 header('Location: /product-catalog/profile');
                 exit;

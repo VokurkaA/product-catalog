@@ -28,6 +28,7 @@ class User
         $this->liked = $liked;
         $this->previousPurchases = $previousPurchases;
     }
+
     function __get($name)
     {
         if (property_exists($this, $name)) {
@@ -35,6 +36,7 @@ class User
         }
         throw new \Exception("Property {$name} does not exist");
     }
+
     function __set($name, $value)
     {
         if (property_exists($this, $name)) {

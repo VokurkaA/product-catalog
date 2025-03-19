@@ -21,7 +21,7 @@
 
         <?php if ($currentPage > 1): ?>
             <a href="?page=<?= ($currentPage - 1) . $queryString ?>"
-                class="px-4 py-2 bg-gray-800 text-gray-100 rounded-lg hover:bg-gray-700 transition-colors">
+               class="px-4 py-2 bg-gray-800 text-gray-100 rounded-lg hover:bg-gray-700 transition-colors">
                 Previous
             </a>
         <?php endif; ?>
@@ -34,17 +34,17 @@
             <?php endif; ?>
 
             <a href="?page=<?= $i . $queryString ?>"
-                class="px-4 py-2 rounded-lg transition-colors <?= $i === $currentPage ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100 hover:bg-gray-700' ?>">
+               class="px-4 py-2 rounded-lg transition-colors <?= $i === $currentPage ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100 hover:bg-gray-700' ?>">
                 <?= $i ?>
             </a>
 
-        <?php
+            <?php
             $prevPage = $i;
         endforeach; ?>
 
         <?php if ($currentPage < $totalPages): ?>
             <a href="?page=<?= ($currentPage + 1) . $queryString ?>"
-                class="px-4 py-2 bg-gray-800 text-gray-100 rounded-lg hover:bg-gray-700 transition-colors">
+               class="px-4 py-2 bg-gray-800 text-gray-100 rounded-lg hover:bg-gray-700 transition-colors">
                 Next
             </a>
         <?php endif; ?>

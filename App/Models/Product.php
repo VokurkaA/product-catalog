@@ -25,21 +25,7 @@ class Product
         $this->rating = $rating;
         $this->stock = $stock;
     }
-    function __get($val)
-    {
-        if (property_exists($this, $val)) {
-            return $this->$val;
-        }
-        throw new \Exception("Property {$val} does not exist");
-    }
-    function __set($name, $value)
-    {
-        if (property_exists($this, $name)) {
-            $this->$name = $value;
-        } else {
-            throw new \Exception("Property {$name} does not exist");
-        }
-    }
+
     public static function filterProductsByCategory($categoryIds, $products)
     {
         if (empty($categoryIds)) {
@@ -53,6 +39,7 @@ class Product
         }
         return $result;
     }
+
     public static function filterProductsBySearch($name, $products)
     {
         if (empty($name)) {
@@ -66,6 +53,7 @@ class Product
         }
         return $result;
     }
+
     public static function sortProducts($sort, $products)
     {
         if (!$sort) {
@@ -101,5 +89,22 @@ class Product
                 break;
         }
         return $products;
+    }
+
+    function __get($val)
+    {
+        if (property_exists($this, $val)) {
+            return $this->$val;
+        }
+        throw new \Exception("Property {$val} does not exist");
+    }
+
+    function __set($name, $value)
+    {
+        if (property_exists($this, $name)) {
+            $this->$name = $value;
+        } else {
+            throw new \Exception("Property {$name} does not exist");
+        }
     }
 }
