@@ -11,6 +11,124 @@ class Cache
         'categories' => null
     ];
 
+    public static function clear($key = null)
+    {
+        if ($key !== null) {
+            if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
+                throw new \InvalidArgumentException("Invalid cache key: {$key}");
+            }
+            self::$memoryCache[$key] = null;
+            if (isset($_SESSION['cache'])) {
+                $_SESSION['cache'][$key] = null;
+            }
+        } else {
+            self::$memoryCache = [
+                'user' => null,
+                'products' => null,
+                'categories' => null
+            ];
+            if (isset($_SESSION['cache'])) {
+                $_SESSION['cache'] = self::$memoryCache;
+            }
+            self::$isInit = false;
+        }
+    }
+
+    public static function remove($key, $itemId)
+    {
+        if (!in_array($key, ['products', 'categories', 'users'])) {
+            throw new \InvalidArgumentException("Invalid cache key for removal: {$key}");
+        }
+
+        if (!self::$isInit) {
+            self::init();
+        }
+
+        $data = self::get($key);
+        if (!$data || !isset($data[$itemId])) {
+            return false;
+        }
+
+        switch ($key) {
+            case 'products':
+                Database::query("DELETE FROM products WHERE id = :id", [':id' => $itemId]);
+                break;
+            case 'categories':
+                Database::query("DELETE FROM categories WHERE id = :id", [':id' => $itemId]);
+                break;
+            case 'users':
+                Database::query("DELETE FROM users WHERE id = :id", [':id' => $itemId]);
+                break;
+        }
+
+        unset($data[$itemId]);
+        self::$memoryCache[$key] = $data;
+        $_SESSION['cache'][$key] = $data;
+
+        return true;
+    }
+
+    private static function init()
+    {
+        if (self::$isInit) {
+            return;
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['cache'])) {
+            $_SESSION['cache'] = [
+                'user' => null,
+                'products' => null,
+                'categories' => null
+            ];
+        }
+
+        if (!self::$memoryCache['products']) {
+            $products = self::initProducts();
+            self::$memoryCache['products'] = $products;
+            $_SESSION['cache']['products'] = $products;
+        }
+
+        if (!self::$memoryCache['categories']) {
+            $categories = self::initCategories();
+            self::$memoryCache['categories'] = $categories;
+            $_SESSION['cache']['categories'] = $categories;
+        }
+
+        self::$isInit = true;
+    }
+
+    private static function initProducts()
+    {
+        $products = Database::query('SELECT * FROM products');
+        $result = [];
+        foreach ($products as $p) {
+            $result[$p['id']] = new Product($p['id'], $p['name'], $p['description'], $p['brand'], $p['price'], $p['category_id'], array_map('intval', explode(',', $p['rating'])), $p['stock']);
+        }
+        return $result;
+    }
+
+    private static function initCategories()
+    {
+        $categories = Database::query('SELECT * FROM categories');
+        $result = [];
+        foreach ($categories as $c) {
+            $result[$c['id']] = new Category($c['id'], $c['name'], $c['parent_id'] ?? null);
+        }
+
+        foreach ($result as $category) {
+            if ($category->parentId !== null && isset($result[$category->parentId])) {
+                $currentChildren = $result[$category->parentId]->childrenIds;
+                $currentChildren[] = $category->id;
+                $result[$category->parentId]->childrenIds = $currentChildren;
+            }
+        }
+        return $result;
+    }
+
     public static function get($key)
     {
         if (is_array($key)) {
@@ -133,67 +251,6 @@ class Cache
         }
     }
 
-    private static function init()
-    {
-        if (self::$isInit) {
-            return;
-        }
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (!isset($_SESSION['cache'])) {
-            $_SESSION['cache'] = [
-                'user' => null,
-                'products' => null,
-                'categories' => null
-            ];
-        }
-
-        if (!self::$memoryCache['products']) {
-            $products = self::initProducts();
-            self::$memoryCache['products'] = $products;
-            $_SESSION['cache']['products'] = $products;
-        }
-
-        if (!self::$memoryCache['categories']) {
-            $categories = self::initCategories();
-            self::$memoryCache['categories'] = $categories;
-            $_SESSION['cache']['categories'] = $categories;
-        }
-
-        self::$isInit = true;
-    }
-
-    private static function initProducts()
-    {
-        $products = Database::query('SELECT * FROM products');
-        $result = [];
-        foreach ($products as $p) {
-            $result[$p['id']] = new Product($p['id'], $p['name'], $p['description'], $p['brand'], $p['price'], $p['category_id'], array_map('intval', explode(',', $p['rating'])), $p['stock']);
-        }
-        return $result;
-    }
-
-    private static function initCategories()
-    {
-        $categories = Database::query('SELECT * FROM categories');
-        $result = [];
-        foreach ($categories as $c) {
-            $result[$c['id']] = new Category($c['id'], $c['name'], $c['parent_id'] ?? null);
-        }
-
-        foreach ($result as $category) {
-            if ($category->parentId !== null && isset($result[$category->parentId])) {
-                $currentChildren = $result[$category->parentId]->childrenIds;
-                $currentChildren[] = $category->id;
-                $result[$category->parentId]->childrenIds = $currentChildren;
-            }
-        }
-        return $result;
-    }
-
     private static function syncUserToDatabase($user)
     {
         if (!$user) {
@@ -301,28 +358,5 @@ class Cache
             "INSERT INTO categories (id, name, parent_id) VALUES (:id, :name, :parent_id)";
 
         Database::query($query, $params);
-    }
-
-    public static function clear($key = null)
-    {
-        if ($key !== null) {
-            if (!in_array($key, ['user', 'products', 'categories', 'users'])) {
-                throw new \InvalidArgumentException("Invalid cache key: {$key}");
-            }
-            self::$memoryCache[$key] = null;
-            if (isset($_SESSION['cache'])) {
-                $_SESSION['cache'][$key] = null;
-            }
-        } else {
-            self::$memoryCache = [
-                'user' => null,
-                'products' => null,
-                'categories' => null
-            ];
-            if (isset($_SESSION['cache'])) {
-                $_SESSION['cache'] = self::$memoryCache;
-            }
-            self::$isInit = false;
-        }
     }
 }

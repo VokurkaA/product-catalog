@@ -76,7 +76,7 @@
 
                         <div>
                             <label class="block text-gray-400 mb-1">Price</label>
-                            <input type="number" step="0.01" name="price" required
+                            <input type="number" step="10" name="price" required
                                    value="<?= $product ? htmlspecialchars($product->price) : '' ?>"
                                    class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
                         </div>
@@ -361,7 +361,6 @@
                     <div class="px-4 py-3">Phone</div>
                     <div class="px-4 py-3">Action</div>
                 </div>
-
                 <?php foreach ($users as $userItem): ?>
                     <div class="grid grid-cols-6 border-t border-gray-700">
                         <div class="px-4 py-3"><?= substr($userItem->id, 0, 8) ?>...</div>
