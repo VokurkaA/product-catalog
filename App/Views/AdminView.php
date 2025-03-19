@@ -20,7 +20,6 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-    <!-- Tab Navigation -->
     <div class="flex border-b border-gray-700 mb-6">
         <a href="?tab=products"
            class="py-3 px-6 font-medium text-lg <?= $activeTab === 'products' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-200' ?>">
@@ -38,7 +37,6 @@
         <?php endif; ?>
     </div>
 
-    <!-- Add New Button -->
     <div class="mb-6">
         <a href="?tab=<?= $activeTab ?>&action=add"
            class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
@@ -47,10 +45,8 @@
     </div>
 
     <?php if ($action === 'add' || $action === 'edit'): ?>
-        <!-- Forms for Adding/Editing -->
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 mb-8">
             <?php if ($activeTab === 'products'): ?>
-                <!-- Product Form -->
                 <?php
                 $product = null;
                 if ($action === 'edit' && isset($id)) {
@@ -131,7 +127,6 @@
                 </form>
 
             <?php elseif ($activeTab === 'categories'): ?>
-                <!-- Category Form -->
                 <?php
                 $category = null;
                 if ($action === 'edit' && isset($id)) {
@@ -268,7 +263,6 @@
     <?php else: ?>
         <?php if ($activeTab === 'products'): ?>
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <!-- Header -->
                 <div class="grid grid-cols-7 bg-gray-700 text-left font-semibold">
                     <div class="px-4 py-3">ID</div>
                     <div class="px-4 py-3">Name</div>
@@ -279,7 +273,6 @@
                     <div class="px-4 py-3">Action</div>
                 </div>
 
-                <!-- Rows -->
                 <?php foreach ($products as $product): ?>
                     <div class="grid grid-cols-7 border-t border-gray-700">
                         <div class="px-4 py-3"><?= $product->id ?></div>
@@ -309,7 +302,6 @@
 
         <?php elseif ($activeTab === 'categories'): ?>
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <!-- Header -->
                 <div class="grid grid-cols-5 bg-gray-700 text-left font-semibold">
                     <div class="px-4 py-3">ID</div>
                     <div class="px-4 py-3">Name</div>
@@ -318,7 +310,6 @@
                     <div class="px-4 py-3">Action</div>
                 </div>
 
-                <!-- Rows -->
                 <?php foreach ($categories as $category): ?>
                     <div class="grid grid-cols-5 border-t border-gray-700">
                         <div class="px-4 py-3"><?= $category->id ?></div>
@@ -362,7 +353,6 @@
 
         <?php elseif ($activeTab === 'users' && $user->role == "owner"): ?>
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <!-- Header -->
                 <div class="grid grid-cols-6 bg-gray-700 text-left font-semibold">
                     <div class="px-4 py-3">ID</div>
                     <div class="px-4 py-3">Username</div>
@@ -372,7 +362,6 @@
                     <div class="px-4 py-3">Action</div>
                 </div>
 
-                <!-- Rows -->
                 <?php foreach ($users as $userItem): ?>
                     <div class="grid grid-cols-6 border-t border-gray-700">
                         <div class="px-4 py-3"><?= substr($userItem->id, 0, 8) ?>...</div>

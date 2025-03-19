@@ -41,7 +41,6 @@ class AdminController implements BaseController
                 $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : count($products) + 1;
                 $rating = isset($_POST['rating']) ? explode(',', $_POST['rating']) : [5];
 
-                // Validate product fields
                 if (empty($_POST['name'])) {
                     $this->errors[] = "Product name is required";
                 }
@@ -58,7 +57,6 @@ class AdminController implements BaseController
                     $this->errors[] = "Selected category does not exist";
                 }
 
-                // Only save if no errors
                 if (empty($this->errors)) {
                     $products[$productId] = new Product(
                         $productId,
@@ -78,7 +76,6 @@ class AdminController implements BaseController
                 $categoryId = isset($_POST['category_id']) ? (int)$_POST['category_id'] : count($categories) + 1;
                 $parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
 
-                // Validate category fields
                 if (empty($_POST['name'])) {
                     $this->errors[] = "Category name is required";
                 }
@@ -89,7 +86,6 @@ class AdminController implements BaseController
                     $this->errors[] = "Category cannot be its own parent";
                 }
 
-                // Only save if no errors
                 if (empty($this->errors)) {
                     $categories[$categoryId] = new Category(
                         $categoryId,

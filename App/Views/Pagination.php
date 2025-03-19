@@ -6,15 +6,14 @@
         $queryString = http_build_query($params);
         $queryString = $queryString ? '&' . $queryString : '';
 
-        // Calculate which page numbers to show
         $pagesToShow = [];
-        $pagesToShow[] = 1; // Always show first page
+        $pagesToShow[] = 1;
 
         for ($i = max(2, $currentPage - 2); $i <= min($currentPage + 2, $totalPages - 1); $i++) {
             $pagesToShow[] = $i;
         }
 
-        $pagesToShow[] = $totalPages; // Always show last page
+        $pagesToShow[] = $totalPages;
         $pagesToShow = array_unique($pagesToShow);
         sort($pagesToShow);
         ?>

@@ -11,11 +11,8 @@
 <body class="bg-gray-900 min-h-screen px-8 pt-24">
 <?php (new \App\Controllers\HeaderController())->handle(); ?>
 <div class="container mx-auto">
-    <!-- Sort & Search Section -->
     <div class="block md:flex md:justify-between md:items-center mb-8 space-y-4 md:space-y-0 md:space-x-4">
-        <!-- Sort Dropdown -->
         <form method="GET" action="">
-            <!-- Keep existing hidden fields -->
             <?php foreach ($_GET as $key => $value): ?>
                 <?php if ($key !== 'sort'): ?>
                     <input type="hidden" name="<?= htmlspecialchars($key) ?>" value="<?= htmlspecialchars($value) ?>">
@@ -48,7 +45,6 @@
             </select>
         </form>
 
-        <!-- Search Form -->
         <form method="GET" action="" class="flex items-center space-x-3 flex-grow">
             <?php foreach ($_GET as $key => $value): ?>
                 <?php if ($key !== 'search'): ?>
@@ -85,7 +81,6 @@
         </form>
     </div>
 
-    <!-- Category Navigation -->
     <div>
         <nav class="mb-4 select-none flex flex-row-reverse w-fit items-center space-x-2 text-gray-400
                         bg-gray-800/50 px-4 py-2 rounded-lg backdrop-blur">
@@ -109,7 +104,6 @@
             </a>
         </nav>
 
-        <!-- Category Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
             <?php if (empty($_GET['category'])): ?>
                 <?php foreach ($categories as $c): ?>
@@ -139,7 +133,6 @@
         <?php foreach ($selectedProducts as $p) : ?>
             <a href="product/<?= $p->id ?>"
                class="group bg-gray-800 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-700 block hover:scale-[1.02]">
-                <!-- Product Image -->
                 <div class="relative aspect-[4/3] overflow-hidden">
                     <img
                             src="placeholder.webp"
@@ -147,7 +140,6 @@
                             class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-300">
                 </div>
 
-                <!-- Product Details -->
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-2">
                         <h2 class="text-xl font-semibold text-gray-100 line-clamp-2"><?= $p->name ?></h2>

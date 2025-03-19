@@ -54,7 +54,6 @@
                     </div>
                 </div>
 
-                <!-- Order Details -->
                 <div class="border-t border-gray-700 pt-6">
                     <h2 class="text-xl font-semibold text-white mb-4">Order Details</h2>
                     <div class="space-y-4">
@@ -71,7 +70,6 @@
                     </div>
                 </div>
 
-                <!-- Order Summary -->
                 <div class="border-t border-gray-700 pt-6">
                     <h2 class="text-xl font-semibold text-white mb-4">Order Summary</h2>
                     <div class="space-y-2">

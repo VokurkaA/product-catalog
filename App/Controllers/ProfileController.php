@@ -17,7 +17,6 @@ class ProfileController implements BaseController
             exit();
         }
 
-        // Handle logout request
         if (isset($_POST['logout'])) {
             Cache::clear('user');
             header('Location: /product-catalog/login');

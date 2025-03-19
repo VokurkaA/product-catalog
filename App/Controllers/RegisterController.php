@@ -19,7 +19,6 @@ class RegisterController implements BaseController
 
     private function handleRegistration()
     {
-        // Validate input
         $username = htmlspecialchars(trim($_POST['username'] ?? ''), ENT_QUOTES, 'UTF-8');
         $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
         $password = $_POST['password'] ?? '';
