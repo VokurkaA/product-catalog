@@ -22,7 +22,7 @@ Aplikace se řídí architekturou Model-View-Controller (MVC):
                                                    │
                                                    ▼
 ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│    View     │ ◄─────│   Cache     │ ◄───── │   Model    │
+│    View     │ ◄─────│   Cache     │ ◄─────│    Model    │
 └─────────────┘       └─────────────┘       └─────────────┘
       │                                            │
       │                                            ▼
