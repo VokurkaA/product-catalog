@@ -25,7 +25,6 @@ class RegisterController implements BaseController
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        // Validation checks
         if (empty($username)) {
             $this->errors[] = "Username is required";
         }
@@ -41,10 +40,16 @@ class RegisterController implements BaseController
 
         if (empty($this->errors)) {
             try {
-                Cache::set('user', new User(null, $username, password_hash($password, PASSWORD_BCRYPT), $email));
+                $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+                if ($hashedPassword === false) {
+                    throw new \Exception("Password hashing failed");
+                }
+                
+                Cache::set('user', new User(null, $username, $hashedPassword, $email));
                 header('Location: /product-catalog/profile');
                 exit;
             } catch (\Exception $e) {
+                die(var_dump($e));
                 $this->errors[] = "Registration failed. Please try again.";
             }
         }

@@ -127,6 +127,22 @@ class Cache
         if ($key == 'user') {
             self::syncUserToDatabase($value);
         }
+        if ($key == 'users') {
+            foreach ($value as $user) {
+                self::syncUserToDatabase($user);
+            }
+        }
+
+        if ($key == 'products') {
+            foreach ($value as $product) {
+                self::syncProductToDatabase($product);
+            }
+        }
+        if ($key == 'categories') {
+            foreach ($value as $category) {
+                self::syncCategoryToDatabase($category);
+            }
+        }
     }
 
     public static function clear($key = null)
@@ -184,7 +200,6 @@ class Cache
     {
         $userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
         if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
-            // Parse PostgreSQL array format by removing {} and splitting on commas
             $cart = array_map('intval', array_filter(explode(',', trim($userdata[0]['cart'], '{}'))));
             $liked = array_map('intval', array_filter(explode(',', trim($userdata[0]['liked'], '{}'))));
             $previousPurchases = array_map('intval', array_filter(explode(',', trim($userdata[0]['previous_purchases'], '{}'))));
@@ -210,25 +225,104 @@ class Cache
             throw new \InvalidArgumentException("Invalid user object");
         }
 
+        $exists = $user->id != null;
+
+        if ($exists) {
+            $params = [
+                ':id' => $user->id,
+                ':username' => $user->username,
+                ':password_hash' => $user->passwordHash,
+                ':email' => $user->email,
+                ':role' => $user->role,
+                ':phone_number' => $user->phoneNumber,
+                ':address' => $user->address,
+                ':cart' => '{' . implode(',', $user->cart) . '}',
+                ':liked' => '{' . implode(',', $user->liked) . '}',
+                ':previous_purchases' => '{' . implode(',', $user->previousPurchases) . '}'
+            ];
+
+            $query = "UPDATE users SET username = :username, password_hash = :password_hash, 
+                     email = :email, role = :role, phone_number = :phone_number, 
+                     address = :address, cart = :cart, liked = :liked, 
+                     previous_purchases = :previous_purchases 
+                     WHERE id = :id";
+        } else {
+            $params = [
+                ':username' => $user->username,
+                ':password_hash' => $user->passwordHash,
+                ':email' => $user->email,
+                ':role' => $user->role,
+                ':phone_number' => $user->phoneNumber,
+                ':address' => $user->address,
+                ':cart' => '{' . implode(',', $user->cart) . '}',
+                ':liked' => '{' . implode(',', $user->liked) . '}',
+                ':previous_purchases' => '{' . implode(',', $user->previousPurchases) . '}'
+            ];
+
+            $query = "INSERT INTO users (username, password_hash, email, role, phone_number, 
+                     address, cart, liked, previous_purchases) 
+                     VALUES (:username, :password_hash, :email, :role, :phone_number, 
+                     :address, :cart, :liked, :previous_purchases)";
+        }
+
+        $result = Database::query($query, $params);
+
+        if (!$exists && $result) {
+            $userData = Database::query(
+                "SELECT id FROM users WHERE username = :username AND email = :email",
+                [':username' => $user->username, ':email' => $user->email]
+            );
+            if (!empty($userData)) {
+                $user->id = $userData[0]['id'];
+            }
+        }
+    }
+
+    private static function syncProductToDatabase($product)
+    {
+        if (!$product) {
+            throw new \InvalidArgumentException("Invalid product object");
+        }
+
         $params = [
-            ':id' => $user->id,
-            ':username' => $user->username,
-            ':email' => $user->email,
-            ':phone_number' => $user->phoneNumber,
-            ':address' => $user->address,
-            ':cart' => '{' . implode(',', $user->cart) . '}',
-            ':liked' => '{' . implode(',', $user->liked) . '}',
-            ':previous_purchases' => '{' . implode(',', $user->previousPurchases) . '}'
+            ':id' => $product->id,
+            ':name' => $product->name,
+            ':description' => $product->description,
+            ':brand' => $product->brand,
+            ':price' => $product->price,
+            ':category_id' => $product->categoryId,
+            ':rating' => '{' . implode(',', $product->rating) . '}',
+            ':stock' => $product->stock
         ];
 
-        $exists = Database::query("SELECT id FROM users WHERE id = :id", [':id' => $user->id]);
+        $exists = Database::query("SELECT id FROM products WHERE id = :id", [':id' => $product->id]);
 
         $query = $exists ?
-            "UPDATE users SET username = :username, email = :email, phone_number = :phone_number, 
-             address = :address, cart = :cart, liked = :liked, previous_purchases = :previous_purchases 
+            "UPDATE products SET name = :name, description = :description, brand = :brand, 
+             price = :price, category_id = :category_id, rating = :rating, stock = :stock 
              WHERE id = :id" :
-            "INSERT INTO users (id, username, email, phone_number, address, cart, liked, previous_purchases) 
-             VALUES (:id, :username, :email, :phone_number, :address, :cart, :liked, :previous_purchases)";
+            "INSERT INTO products (id, name, description, brand, price, category_id, rating, stock) 
+             VALUES (:id, :name, :description, :brand, :price, :category_id, :rating, :stock)";
+
+        Database::query($query, $params);
+    }
+    private static function syncCategoryToDatabase($category)
+    {
+        if (!$category) {
+            throw new \InvalidArgumentException("Invalid category object");
+        }
+
+        $params = [
+            ':id' => $category->id,
+            ':name' => $category->name,
+            ':parent_id' => $category->parentId
+        ];
+
+        $exists = Database::query("SELECT id FROM categories WHERE id = :id", [':id' => $category->id]);
+
+        $query = $exists ?
+            "UPDATE categories SET name = :name, parent_id = :parent_id WHERE id = :id" :
+            "INSERT INTO categories (id, name, parent_id) VALUES (:id, :name, :parent_id)";
 
         Database::query($query, $params);
     }

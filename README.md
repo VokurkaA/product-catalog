@@ -1,166 +1,232 @@
 # Product Catalog
 
-## Komunikace s databází prostřednictvím PDO
+## Přehled
+Plně vybavený systém produktového katalogu postavený na PHP s využitím architektury MVC. Poskytuje funkce pro procházení produktů, autentizaci uživatelů, správu nákupního košíku a administrativní možnosti.
 
-Aplikace využívá třídu PDO (PHP Data Objects) pro přístup k databázi, což poskytuje bezpečné a konzistentní rozhraní pro práci s různými typy databází. V našem projektu je implementována komunikace s PostgreSQL databází.
 
-### Třída Database
+## Architekrura
+Aplikace se řídí architekturou Model-View-Controller (MVC):
 
-Hlavní součástí komunikace s databází je třída `Database` v souboru `App/Models/Database.php`, která poskytuje následující funkce:
+- **Models**: Reprezentují datovou strukturu a obchodní logiku
+- **Views**: Spravují prezentační vrstvu
+- **Controllers**: Zpracovávají vstup uživatele a koordinují modely a pohledy
 
-1. **Inicializace připojení**
-   - Načítání konfiguračních údajů z `.env` souboru
-   - Automatická inicializace při prvním použití
+## Diagram toku dat
 
-2. **Připojení k databázi**
-   - Využití PDO pro vytvoření spojení s PostgreSQL databází
-   - Nastavení chybového režimu na výjimky pro snadnější zpracování chyb
-   - Nastavení výchozího způsobu získávání dat jako asociativní pole
-
-3. **Dotazování databáze**
-   - Metoda `query()` pro provádění SQL dotazů s parametry
-   - Použití připravených výrazů (prepared statements) pro zabezpečení proti SQL injection
-   - Automatické zpracování a vrácení výsledků
-
-### Příklad použití PDO v aplikaci
-
-```php
-// Příklad dotazu z třídy Cache
-$userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
-
-// Příklad aktualizace dat v databázi
-$query = "UPDATE users SET username = :username, email = :email WHERE id = :id";
-Database::query($query, [':username' => $username, ':email' => $email, ':id' => $id]);
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│   Browser   │ ─────►│   Router    │ ─────►│ Controller  │
+└─────────────┘       └─────────────┘       └─────────────┘
+                                                   │
+                                                   ▼
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│    View     │ ◄───── │   Cache    │ ◄───── │   Model     │
+└─────────────┘       └─────────────┘       └─────────────┘
+      │                                            │
+      │                                            ▼
+      │                                     ┌─────────────┐
+      └────────────────────────────────────►│  Database   │
+                                            └─────────────┘
 ```
 
-### Výhody použití PDO
+## Klíčové komponenty  
 
-- **Bezpečnost**: Ochrana proti SQL injection útoků díky parametrizovaným dotazům
-- **Přenositelnost**: Snadný přechod mezi různými databázovými systémy
-- **Efektivita**: Připravené výrazy zlepšují výkon opakovaných dotazů
-- **Zpracování chyb**: Robustní systém výjimek pro lepší zachycení a řešení problémů
+### Modely  
+- **Product**: Spravuje data produktů, filtrování a třídění  
+- **Category**: Řídí hierarchii a vztahy kategorií  
+- **User**: Spravuje uživatelská data, autentizaci a oprávnění  
+- **Cache**: Poskytuje mechanismus pro ukládání výsledků dotazů do mezipaměti  
+- **Database**: Spravuje připojení k databázi a dotazy  
 
-## Hashování hesla a jeho ověření
+### Kontrolery  
+- **HomeController**: Spravuje stránku s výpisem produktů  
+- **ProductController**: Řídí detaily jednotlivých produktů  
+- **CartController**: Spravuje nákupní košík  
+- **CheckoutController**: Řídí proces objednávky  
+- **AdminController**: Poskytuje administrativní funkce  
+- **LoginController/RegisterController**: Spravují autentizaci uživatelů  
+- **ProfileController**: Spravuje uživatelská data a profil  
 
-Aplikace implementuje bezpečnou správu hesel využitím PHP funkcí pro hashování a ověřování.
+### Pohledy  
+Pohledy jsou vykreslovány kontrolery a zobrazují uživatelské rozhraní.  
 
-### Hashování hesla při registraci
+## Klíčové funkce  
 
-Při registraci nového uživatele nebo změně hesla se používá funkce `password_hash()` s algoritmem BCRYPT:
+### Správa produktů  
+- Výpis produktů s filtrováním a tříděním  
+- Hierarchie kategorií  
+- Správa skladových zásob  
+- Hodnotící systém  
 
-```php
-// Příklad z RegisterController.php
-$passwordHash = password_hash($password, PASSWORD_BCRYPT);
+### Autentizace uživatelů  
+- Registrace a přihlášení uživatelů  
+- Hashování hesel pro bezpečnost  
+- Uživatelské role (uživatel, administrátor, vlastník)  
 
-// Příklad z AdminController.php
-$users[$id]->password = password_hash($_POST['newPassword'], PASSWORD_BCRYPT);
+### Nákupní košík  
+- Přidávání/odebírání produktů  
+- Úprava množství  
+- Proces objednávky  
+
+### Administrační panel  
+- Operace CRUD nad produkty  
+- Správa kategorií  
+- Správa uživatelů  
+
+## Database Schema
+
+### Products Table
+```sql
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    brand VARCHAR(255),
+    price NUMERIC(10,2) NOT NULL,
+    category_id INTEGER,
+    rating INTEGER[],
+    stock INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT product_category_id_fkey FOREIGN KEY (category_id)
+        REFERENCES categories (id) ON DELETE CASCADE
+);
 ```
 
-### Ověření hesla při přihlášení
+## Schéma databáze  
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(5) NOT NULL DEFAULT 'user',
+    phone_number VARCHAR(15),
+    address TEXT,
+    cart INTEGER[] NOT NULL DEFAULT '{}',
+    liked INTEGER[] NOT NULL DEFAULT '{}',
+    previous_purchases INTEGER[] NOT NULL DEFAULT '{}'
+);
+```
 
-Pro ověření správnosti hesla při přihlášení se používá funkce `password_verify()`:
+### Categories Table
+```sql
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    parent_id INTEGER,
+    CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id)
+        REFERENCES categories (id) ON DELETE SET NULL
+);
+```
+
+## Instalace a nastavení  
+
+1. Naklonujte repozitář  
+2. Vytvořte databázi a naimportujte schéma SQL  
+3. Nakonfigurujte soubor `.env` s přihlašovacími údaji k databázi:  
+   ```
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+   POSTGRES_NAME=your_database
+   POSTGRES_USER=your_user
+   POSTGRES_PASSWORD=your_password
+   ```
+4. Nainstalujte závislosti pomocí Composeru:  
+   ```
+   composer install
+   ```
+5. Nastavte webový server (Apache/Nginx) tak, aby směřoval do adresáře projektu  
+
+## Bezpečnostní prvky  
+
+### PDO pro bezpečnost databáze  
+
+Aplikace používá PHP Data Objects (PDO) pro interakce s databází, což poskytuje bezpečný způsob připojení a provádění dotazů. PDO využívá připravené dotazy k prevenci SQL injekcí.  
+
+#### Jak funguje PDO  
+
+1. **Připojení**: PDO se připojí k databázi s poskytnutými přihlašovacími údaji.  
+2. **Připravené dotazy**: Místo přímého vkládání hodnot do SQL se používají zástupné symboly.  
+3. **Vázání parametrů**: Hodnoty se navážou na zástupné symboly a PDO zajistí jejich bezpečnost.  
+4. **Provedení**: Dotaz se provede s bezpečnými hodnotami.  
+   
+#### Příklad z kódu  
 
 ```php
-// Příklad z Cache.php
-if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
-    // Uživatel je úspěšně ověřen
+// From Database.php
+public static function query($sql, $params = [])
+{
+    $pdo = self::connect();
+    $stmt = $pdo->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+    return $stmt->fetchAll();
 }
 ```
 
-### Výhody zvoleného řešení
+Usage example:
+```php
+// Secure query with parameter binding
+$results = Database::query(
+    "SELECT * FROM users WHERE username = :username",
+    [':username' => $username]
+);
+```
 
-1. **Bezpečnost**:
-   - BCRYPT automaticky obsahuje "sůl" (salt), která je unikátní pro každý hash
-   - Algoritmus je navržen tak, aby byl odolný vůči útokům hrubou silou
-   - Výsledný hash obsahuje všechny informace potřebné pro ověření (algoritmus, cost parametr, sůl)
+### Hashování hesel  
 
-2. **Adaptabilita**:
-   - Nativní PHP funkce umožňují v budoucnu snadno přejít na novější, bezpečnější algoritmy
-   - Změny vyžadují minimální úpravy kódu
+Aplikace využívá vestavěné funkce PHP `password_hash()` a `password_verify()` k bezpečnému hashování a ověřování hesel. To zamezuje ukládání hesel v čitelné podobě.  
 
-3. **Snadné použití**:
-   - Intuitivní API bez nutnosti manuální správy soli nebo dalších parametrů
+#### Jak funguje hashování hesel  
 
-## Popis a zdůvodnění řešení
+1. **Hashování**: Při registraci se heslo hashuje pomocí `password_hash()`.  
+2. **Uložení**: Do databáze se uloží pouze hash hesla, nikoli původní heslo.  
+3. **Ověření**: Při přihlášení se pomocí `password_verify()` kontroluje, zda se zadané heslo shoduje s uloženým hashem.  
+4. **Salt**: PHP automaticky generuje náhodný salt pro každé heslo, což zvyšuje bezpečnost.  
 
-### Architektura aplikace
+#### Příklad z kódu  
 
-Projekt využívá architekturu MVC (Model-View-Controller), která rozděluje aplikaci na tři hlavní komponenty:
+Hashing a password during registration:
+```php
+// From RegisterController.php
+$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+if ($hashedPassword === false) {
+    throw new \Exception("Password hashing failed");
+}
+```
 
-1. **Modely** (`App/Models/`):
-   - Reprezentují datové struktury a business logiku
-   - Zapouzdřují přístup k databázi a manipulaci s daty
-   - Implementují validaci dat a aplikační pravidla
+Verifying a password during login:
+```php
+// From Cache.php (initUser method)
+$userdata = Database::query("SELECT * FROM users WHERE username = :username", [':username' => $username]);
+if (!empty($userdata) && password_verify($password, $userdata[0]['password_hash'])) {
+    // User is authenticated
+    // ...
+}
+```
 
-2. **Pohledy** (`App/Views/`):
-   - Starají se o prezentační vrstvu
-   - Obsahují šablony pro zobrazení dat uživateli
-   - Oddělují aplikační logiku od prezentace
+## Mechanismus mezipaměti (caching)  
 
-3. **Kontrolery** (`App/Controllers/`):
-   - Zpracovávají požadavky uživatelů
-   - Koordinují spolupráci mezi modely a pohledy
-   - Řídí tok aplikace a přesměrování
+Aplikace implementuje systém ukládání do mezipaměti pro zlepšení výkonu snížením počtu dotazů do databáze. Třída `Cache` spravuje ukládání produktů, kategorií a uživatelských dat.  
 
-### Implementované bezpečnostní prvky
+## Výkonnostní optimalizace  
 
-1. **Ochrana proti SQL injection**:
-   - Použití parametrizovaných dotazů (prepared statements) via PDO
-   - Žádné přímé vkládání uživatelských vstupů do SQL dotazů
+- **Ukládání do mezipaměti**: Výsledky dotazů do databáze se ukládají, aby se snížila jejich četnost  
+- **Stránkování (pagination)**: Seznam produktů je stránkován, aby se zobrazovalo omezené množství položek najednou  
+- **Lazy Loading**: Data se načítají pouze v případě potřeby  
 
-2. **Zabezpečení hesel**:
-   - Bezpečné hashování hesel pomocí BCRYPT
-   - Neukládání hesel v čitelné podobě
+## Bezpečnostní opatření  
 
-3. **Validace a sanitace vstupů**:
-   - Ošetření všech uživatelských vstupů před jejich zpracováním
-   - Použití `htmlspecialchars()` pro prevenci XSS útoků
-   - Validace emailových adres, telefonních čísel a dalších údajů
+- **Validace vstupů**: Všechny uživatelské vstupy jsou validovány a očištěny  
+- **Ochrana proti CSRF**: Formuláře využívají CSRF tokeny k zabránění útoků CSRF  
+- **Ochrana proti XSS**: Výstupy jsou ošetřeny proti skriptovacím útokům  
+- **Ochrana proti SQL injekcím**: Připravené dotazy s PDO chrání proti SQL injekcím  
 
-4. **Autorizace a autentizace**:
-   - Kontrola uživatelských rolí pro přístup k admin funkcím
-   - Zabezpečení citlivých operací pouze pro přihlášené uživatele
+## Budoucí vylepšení  
 
-### Datový model a cache
-
-Aplikace používá třídu `Cache` pro efektivní správu dat v paměti a redukci opakovaných dotazů na databázi:
-
-1. **Správa session a paměti**:
-   - Ukládání dat v session pro persistenci mezi požadavky
-   - Vnitřní cache v paměti pro rychlý přístup v rámci jednoho požadavku
-
-2. **Synchronizace s databází**:
-   - Automatická synchronizace změn v uživatelských datech s databází
-   - Inicializace dat z databáze při prvním přístupu
-
-### Zdůvodnění technických rozhodnutí
-
-1. **Použití PDO místo MySQLi nebo jiných alternativ**:
-   - Abstrakce databázové vrstvy pro snadnou přenositelnost
-   - Lepší podpora zabezpečených dotazů a zpracování chyb
-   - Konzistentní API napříč různými databázovými systémy
-
-2. **Volba BCRYPT pro hashování hesel**:
-   - Standardizovaný a osvědčený algoritmus s dobrou bezpečnostní pověstí
-   - Integrovaná "sůl" a automatické nastavení vhodné složitosti
-   - Nativní podpora v PHP bez nutnosti externích knihoven
-
-3. **Implementace vrstvené architektury (MVC)**:
-   - Oddělení zodpovědností pro lepší údržbu a rozšíření kódu
-   - Znovu použitelné komponenty napříč aplikací
-   - Snadnější testování jednotlivých částí systému
-
-4. **Využití vlastní cache vrstvy**:
-   - Optimalizace výkonu redukcí redundantních databázových dotazů
-   - Zachování konzistence dat během jedné session
-   - Flexibilní mechanismus pro správu dat v paměti
-
-### Shrnutí
-
-Aplikace je navržena s důrazem na:
-- **Bezpečnost**: Ochrana proti běžným typům útoků
-- **Výkon**: Efektivní správa paměti a databázových dotazů
-- **Udržitelnost**: Jasná struktura a oddělení zodpovědností
-- **Rozšiřitelnost**: Modulární design umožňující snadné přidávání nových funkcí
-
-Implementace kombinuje moderní postupy vývoje PHP aplikací s osvědčenými bezpečnostními praktikami pro vytvoření robustního, bezpečného a efektivního produktového katalogu.
+- **Integrace API**: Přidání REST API endpointů pro bezhlavý e-commerce systém  
+- **Platební brána**: Integrace s platebními procesory  
+- **Nahrávání obrázků**: Přidání funkcionality pro nahrávání obrázků produktů  
+- **Optimalizace vyhledávání**: Implementace full-textového vyhledávání pro lepší objevování produktů  
+- **Reportování**: Přidání analytických a reportovacích funkcí  

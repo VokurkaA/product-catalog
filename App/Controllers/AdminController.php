@@ -13,341 +13,133 @@ class AdminController implements BaseController
 
     public function handle()
     {
-        try {
-            $user = Cache::get('user');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $user = null;
-        }
-
+        $user = Cache::get('user');
         if (!$user || ($user->role !== 'admin' && $user->role !== 'owner')) {
             header('Location: /product-catalog');
             exit();
         }
 
+        $products = Cache::get('products');
+        $categories = Cache::get('categories');
+        $users = Cache::get('users');
+
+        $activeTab = $_GET['tab'] ?? 'products';
+        $action = $_GET['action'] ?? '';
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $action = $_POST['action'] ?? '';
-            if (!empty($action) && method_exists($this, $action) && is_callable([$this, $action])) {
-                return $this->$action();
+            if (isset($_POST['delete_product']) && isset($_POST['product_id'])) {
+                unset($products[$_POST['product_id']]);
+                Cache::set('products', $products);
+            } else if (isset($_POST['delete_category']) && isset($_POST['category_id'])) {
+                unset($categories[$_POST['category_id']]);
+                Cache::set('categories', $categories);
+            } else if (isset($_POST['delete_user']) && isset($_POST['user_id'])) {
+                unset($users[$_POST['user_id']]);
+                Cache::set('users', $users);
+            } else if (isset($_POST['save_product'])) {
+                $productId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : count($products) + 1;
+                $rating = isset($_POST['rating']) ? explode(',', $_POST['rating']) : [5];
+
+                // Validate product fields
+                if (empty($_POST['name'])) {
+                    $this->errors[] = "Product name is required";
+                }
+                if (empty($_POST['brand'])) {
+                    $this->errors[] = "Brand is required";
+                }
+                if (!is_numeric($_POST['price']) || $_POST['price'] < 0) {
+                    $this->errors[] = "Price must be a valid positive number";
+                }
+                if (!is_numeric($_POST['stock']) || $_POST['stock'] < 0) {
+                    $this->errors[] = "Stock must be a valid positive number";
+                }
+                if (!isset($categories[$_POST['category_id']])) {
+                    $this->errors[] = "Selected category does not exist";
+                }
+
+                // Only save if no errors
+                if (empty($this->errors)) {
+                    $products[$productId] = new Product(
+                        $productId,
+                        htmlspecialchars($_POST['name']),
+                        htmlspecialchars($_POST['description']),
+                        htmlspecialchars($_POST['brand']),
+                        $_POST['price'],
+                        (int)$_POST['category_id'],
+                        array_map('intval', $rating),
+                        (int)$_POST['stock']
+                    );
+                    Cache::set('products', $products);
+                    header('Location: /product-catalog/admin?tab=' . $activeTab);
+                    exit();
+                }
+            } else if (isset($_POST['save_category'])) {
+                $categoryId = isset($_POST['category_id']) ? (int)$_POST['category_id'] : count($categories) + 1;
+                $parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
+
+                // Validate category fields
+                if (empty($_POST['name'])) {
+                    $this->errors[] = "Category name is required";
+                }
+                if ($parentId !== null && !isset($categories[$parentId])) {
+                    $this->errors[] = "Selected parent category does not exist";
+                }
+                if ($parentId === $categoryId) {
+                    $this->errors[] = "Category cannot be its own parent";
+                }
+
+                // Only save if no errors
+                if (empty($this->errors)) {
+                    $categories[$categoryId] = new Category(
+                        $categoryId,
+                        htmlspecialchars($_POST['name']),
+                        $parentId
+                    );
+
+                    if ($parentId !== null) {
+                        $children = $categories[$parentId]->childrenIds;
+                        if (!in_array($categoryId, $children)) {
+                            $children[] = $categoryId;
+                            $categories[$parentId]->childrenIds = $children;
+                        }
+                    }
+
+                    Cache::set('categories', $categories);
+                    header('Location: /product-catalog/admin?tab=' . $activeTab);
+                    exit();
+                }
+            } else if (isset($_POST['save_user'])) {
+                $username = htmlspecialchars(trim($_POST['username'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $password = $_POST['password'] ?? '';
+                $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+                $role = $_POST['role'] ?? 'user';
+
+                if (empty($username)) {
+                    $this->errors[] = "Username is required";
+                }
+                if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $this->errors[] = "Valid email is required";
+                }
+                if (empty($password)) {
+                    $this->errors[] = "Password is required";
+                }
+                if (empty($role)) {
+                    $this->errors[] = "Role is required";
+                }
+
+                $user = new User(null, $username, password_hash($password, PASSWORD_BCRYPT), $email, $role);
+                $users = Cache::get('users');
+                $users = array_merge($users, $user);
+                Cache::set('users', $users);
+
+                header('Location: /product-catalog/admin?tab=' . $activeTab);
+                exit();
             }
+
+            header('Location: /product-catalog/admin?tab=' . $activeTab);
+            exit();
         }
-
-        try {
-            $products = Cache::get('products') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $products = [];
-        }
-
-        try {
-            $categories = Cache::get('categories') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $categories = [];
-        }
-
-        try {
-            $users = Cache::get('users') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $users = [];
-        }
-
-        $selectedProductId = $_POST['selectedProductId'] ?? null;
-        $selectedCategoryId = $_POST['selectedCategoryId'] ?? null;
-        $selectedUserId = $_POST['selectedUserId'] ?? null;
-
-        $selectedProduct = $selectedProductId && isset($products[$selectedProductId]) ? $products[$selectedProductId] : null;
-
         return require './App/Views/AdminView.php';
-    }
-
-    private function addProduct()
-    {
-        try {
-            $products = Cache::get('products') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $products = [];
-        }
-
-        $newProduct = new Product(
-            count($products),
-            $_POST['name'],
-            $_POST['description'],
-            $_POST['brand'],
-            $_POST['price'],
-            $_POST['stock'],
-            $_POST['category_id'],
-            []
-        );
-        $products[] = $newProduct;
-
-        try {
-            Cache::set('products', $products);
-            $this->errors[] = "Product added successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function updateProduct()
-    {
-        try {
-            $products = Cache::get('products');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['product_id'];
-
-        if (!isset($products[$id])) {
-            $this->errors[] = "Product not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $products[$id]->name = $_POST['name'];
-        $products[$id]->description = $_POST['description'];
-        $products[$id]->brand = $_POST['brand'];
-        $products[$id]->price = (float)$_POST['price'];
-        $products[$id]->stock = (int)$_POST['stock'];
-        $products[$id]->categoryId = (int)$_POST['category_id'];
-
-        try {
-            Cache::set('products', $products);
-            $this->errors[] = "Product updated successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function removeProduct()
-    {
-        try {
-            $products = Cache::get('products');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['product_id'];
-
-        if (!isset($products[$id])) {
-            $this->errors[] = "Product not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        unset($products[$id]);
-
-        try {
-            Cache::set('products', $products);
-            $this->errors[] = "Product removed successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function addCategory()
-    {
-        try {
-            $categories = Cache::get('categories') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $categories = [];
-        }
-
-        $newCategory = new Category(
-            count($categories),
-            $_POST['name'],
-            !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null
-        );
-        $categories[] = $newCategory;
-
-        try {
-            Cache::set('categories', $categories);
-            $this->errors[] = "Category added successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function updateCategory()
-    {
-        try {
-            $categories = Cache::get('categories');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['selectedCategoryId'];
-
-        if (!isset($categories[$id])) {
-            $this->errors[] = "Category not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $categories[$id]->name = $_POST['name'];
-        $categories[$id]->parentId = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;
-
-        try {
-            Cache::set('categories', $categories);
-            $this->errors[] = "Category updated successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function removeCategory()
-    {
-        try {
-            $categories = Cache::get('categories');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['selectedCategoryId'];
-
-        if (!isset($categories[$id])) {
-            $this->errors[] = "Category not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        unset($categories[$id]);
-
-        try {
-            Cache::set('categories', $categories);
-            $this->errors[] = "Category removed successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function updateUser()
-    {
-        try {
-            $users = Cache::get('users');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['selectedUserId'];
-
-        if (!isset($users[$id])) {
-            $this->errors[] = "User not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $users[$id]->username = $_POST['username'];
-        $users[$id]->email = $_POST['email'];
-        if (!empty($_POST['newPassword'])) {
-            $users[$id]->password = password_hash($_POST['newPassword'], PASSWORD_BCRYPT);
-        }
-        $users[$id]->phoneNumber = $_POST['phoneNumber'];
-        $users[$id]->role = $_POST['role'];
-        $users[$id]->address = $_POST['address'];
-
-        try {
-            Cache::set('users', $users);
-            $this->errors[] = "User updated successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function removeUser()
-    {
-        try {
-            $users = Cache::get('users');
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        $id = (int)$_POST['selectedUserId'];
-
-        if (!isset($users[$id])) {
-            $this->errors[] = "User not found.";
-            header('Location: /product-catalog/admin');
-            exit();
-        }
-
-        unset($users[$id]);
-
-        try {
-            Cache::set('users', $users);
-            $this->errors[] = "User removed successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
-    }
-
-    private function addUser()
-    {
-        try {
-            $users = Cache::get('users') ?? [];
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-            $users = [];
-        }
-
-        $newUser = new User(
-            count($users),
-            $_POST['username'],
-            $_POST['email'],
-            password_hash($_POST['password'], PASSWORD_BCRYPT),
-            $_POST['phoneNumber'],
-            $_POST['role'],
-            $_POST['address']
-        );
-        $users[] = $newUser;
-
-        try {
-            Cache::set('users', $users);
-            $this->errors[] = "User added successfully.";
-        } catch (\Exception $e) {
-            $this->errors[] = $e->getMessage();
-        }
-
-        header('Location: /product-catalog/admin');
-        exit();
     }
 }
