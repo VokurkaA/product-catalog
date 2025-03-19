@@ -241,10 +241,50 @@ spravuje ukládání produktů, kategorií a uživatelských dat.
 - **Ochrana proti XSS**: Výstupy jsou ošetřeny proti skriptovacím útokům
 - **Ochrana proti SQL injekcím**: Připravené dotazy s PDO chrání proti SQL injekcím
 
-## Budoucí vylepšení
+## Struktura projektu
 
-- **Integrace API**: Přidání REST API endpointů pro bezhlavý e-commerce systém
-- **Platební brána**: Integrace s platebními procesory
-- **Nahrávání obrázků**: Přidání funkcionality pro nahrávání obrázků produktů
-- **Optimalizace vyhledávání**: Implementace full-textového vyhledávání pro lepší objevování produktů
-- **Reportování**: Přidání analytických a reportovacích funkcí  
+```
+├── App
+│   ├── Controllers
+│   │   ├── AdminController.php
+│   │   ├── BaseController.php
+│   │   ├── CartController.php
+│   │   ├── CheckoutController.php
+│   │   ├── HeaderController.php
+│   │   ├── HomeController.php
+│   │   ├── LoginController.php
+│   │   ├── ProductController.php
+│   │   ├── ProfileController.php
+│   │   └── RegisterController.php
+│   ├── Models
+│   │   ├── Cache.php
+│   │   ├── Category.php
+│   │   ├── Database.php
+│   │   ├── Product.php
+│   │   └── User.php
+│   └── Views
+│       ├── AdminView.php
+│       ├── CartView.php
+│       ├── CheckoutView.php
+│       ├── Footer.php
+│       ├── HeaderView.php
+│       ├── HomeView.php
+│       ├── LoginView.php
+│       ├── Pagination.php
+│       ├── ProductView.php
+│       ├── ProfileView.php
+│       └── RegisterView.php
+├── composer.json
+├── composer.lock
+├── config
+│   └── database.sql
+├── index.php
+├── placeholder.webp
+├── README.md
+├── routes.php
+├── tailwind.config.js
+├── vendor
+│   ├── autoload.php
+│   └── composer
+└── zadani.md
+```
